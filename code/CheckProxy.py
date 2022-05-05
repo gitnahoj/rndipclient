@@ -61,7 +61,7 @@ def loadProxyList():
   print("--loadProxyList")
   global checkDataUrl
   global jsondata
-  url = "%s/getjob/%s/10" % (checkDataUrl,jsondata["token"])
+  url = "%s/getjob/%s/5" % (checkDataUrl,jsondata["token"])
 
   resp = requests.get(url=url) #, params=params)
   print ("---load proxie list check data")
@@ -78,7 +78,7 @@ def loadProxyList():
 
 #///
 i=0
-while (i<100):
+while (i<250):
   i=i+1
   if (len(proxies)==0):
     loadProxyList()
@@ -89,11 +89,7 @@ while (i<100):
     port=proxy["port"]
     ip=int2ip(proxy["ip"])
     jsondata["proxy"]["full"]="%s:%s" % (ip,port)
-    print("curr proxy = %s" %  jsondata["proxy"])
-
-    #ip = socket.gethostbyname("nodesdirect.com")
-    #payload_socks4 = b"\x04\x01"+int_to_bytes(443) +  socket.inet_aton(ip) + b"\x00"
-    payload_socks5 = struct.pack('BBB',0x05, 0x01, 0x00)
+    #print("curr proxy = %s" %  jsondata["proxy"])
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(jsondata["timeout"])
@@ -101,28 +97,9 @@ while (i<100):
     try:
       s.connect((ip, port))
     except Exception as e:
-      print("!!!error %s %s" % (jsondata["proxy"]["full"],str(e)))
-      sendProxyStatus("0")
+      #print("!!!error %s %s" % (jsondata["proxy"]["full"],str(e)))
+#      sendProxyStatus("0")
       continue
-
-    print("---------------Request #%s--------------------------"%jsondata["proxy"])
-    try:
-      s.sendall(payload_socks5)
-      print("Payload 5 sended. Getting info..")
-      _data = s.recv(100)
-      print("socket sock5 received")
-      print(_data)
-      if(len(_data)==2):
-        version, auth = struct.unpack('BB', _data)
-        print("V=%s"%version)
-        print("auth=%s"%auth)
-        if (version==5 and auth==0):
-          sendProxyStatus("5")
-      s.close()
-    except socket.error as e:
-      print("socket socks4 error %s " %str(e))
-    except Exception as e:
-      print("fail socket socks5 %s" %str(e))
 
     if(checkProxyByType("")==True):
       sendProxyStatus("1")
@@ -134,5 +111,5 @@ while (i<100):
       sendProxyStatus("5")
       continue
     else:
-      sendProxyStatus("0")
+#      sendProxyStatus("0")
       continue
