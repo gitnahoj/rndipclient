@@ -1,6 +1,6 @@
-import sqlite3
+#import sqlite3
 import threading
-import requests
+#import requests
 import psutil
 import time
 import sys, os
@@ -78,19 +78,20 @@ def runSubprocess(_retunr_host,_token):
 
 def checkZombieProcesses():
   while True:
-    getValues()
+    #getValues()
     childrens = psutil.Process().children()
     print("child process  = %s" % len(childrens))
     for proc in childrens :
       try:
-        if (proc.status()!="running"):
+        if (proc.status()!="running" or (time.time()-proc._create_time)>700):
           print("---Status = %s" %proc.status())
+          proc.kill()
       except Exception as e:
         print("==checkZombieProcesses ERROR \n%s" %str(e))
 
-    time.sleep(30)
+    time.sleep(60)
 
-createDB()
+#createDB()
 
 #threading.Thread(target=getValues, args=()).start()
 threading.Thread(target=checkZombieProcesses, args=()).start()
@@ -102,12 +103,13 @@ _args=["http://v562757.macloud.host","ttt"]
 
 while (True):
   loud_cpu, loud_mem = psutil.cpu_percent(), psutil.virtual_memory().percent
-  if (loud_cpu <80 and loud_mem<90):
+  if (loud_cpu <50 and loud_mem<60):
     #subprocess.Popen(["python","CheckProxy.py",checkDataUrl,token], creationflags=subprocess.CREATE_NEW_CONSOLE)
     #os.spawnl(os.P_NOWAIT, sys.executable, sys.executable, "CheckProxy.py", "http://v562757.macloud.host ttt")# os.P_DETACH P_NOWAIT
-    os.spawnl(os.P_DETACH, sys.executable, sys.executable, "CheckProxy.py", *_args)# os.P_DETACH P_NOWAIT
-  else:
-    print("====System too low. Waiting... cpu = %s memory = %s" % (loud_cpu, loud_mem))
+    os.spawnl(os.P_NOWAIT, sys.executable, sys.executable, "CheckProxy.py", *_args)# os.P_DETACH P_NOWAIT
+    #os.spawnl(os.P_DETACH, sys.executable, sys.executable, "CheckProxy.py", *_args)# os.P_DETACH P_NOWAIT
+  #else:
+    #print("====System too low. Waiting... cpu = %s memory = %s" % (loud_cpu, loud_mem))
     #try:
       #for proc in [p for p in psutil.Process().children() if p.status()==psutil.STATUS_ZOMBIE]:
         #print("Remove zombie")
