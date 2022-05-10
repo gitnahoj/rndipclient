@@ -162,9 +162,9 @@ for x in threads:
 
 for x in threads:
   try:
-    x.join()
-  except:
-    print("x.join() error")
+    x.join(450)
+  except Exception as e:
+    print("x.join() error %s" %str(e))
 #print("!!!!!Closed process")
 
 sys.exit()

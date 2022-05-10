@@ -91,10 +91,18 @@ def checkZombieProcesses():
 
     time.sleep(60)
 
+def startProcess(p,timeout_s):
+  try:
+      #p = subprocess.Popen(cmd, start_new_session=True)
+      p.wait(timeout=timeout_s)
+  except subprocess.TimeoutExpired:
+      print("Terminate by timeout")
+      p.terminate()
+
 #createDB()
 
 #threading.Thread(target=getValues, args=()).start()
-threading.Thread(target=checkZombieProcesses, args=()).start()
+#threading.Thread(target=checkZombieProcesses, args=()).start()
 #threading.Thread(target=runSubprocess, args=("http://v562757.macloud.host", "ttt")).start()
 #threading.Thread(target=sendDieData, args=()).start()
 #threading.Thread(target=sendLiveData, args=()).start()
@@ -106,16 +114,11 @@ while (True):
   if (loud_cpu <50 and loud_mem<60):
     #subprocess.Popen(["python","CheckProxy.py",checkDataUrl,token], creationflags=subprocess.CREATE_NEW_CONSOLE)
     #os.spawnl(os.P_NOWAIT, sys.executable, sys.executable, "CheckProxy.py", "http://v562757.macloud.host ttt")# os.P_DETACH P_NOWAIT
-    os.spawnl(os.P_NOWAIT, sys.executable, sys.executable, "CheckProxy.py", *_args)# os.P_DETACH P_NOWAIT
+    #os.spawnl(os.P_NOWAIT, sys.executable, sys.executable, "CheckProxy.py", *_args)# os.P_DETACH P_NOWAIT
     #os.spawnl(os.P_DETACH, sys.executable, sys.executable, "CheckProxy.py", *_args)# os.P_DETACH P_NOWAIT
+    threading.Thread(target=startProcess, args=(subprocess.Popen(["python","CheckProxy.py","http://v562757.macloud.host", "ttt"]),500)).start()
   #else:
     #print("====System too low. Waiting... cpu = %s memory = %s" % (loud_cpu, loud_mem))
-    #try:
-      #for proc in [p for p in psutil.Process().children() if p.status()==psutil.STATUS_ZOMBIE]:
-        #print("Remove zombie")
-        #proc.kill()
-    #except Exception as ex:
-      #print(ex)
-      #time.sleep(0.1)
+
   time.sleep(0.5)  
 
