@@ -11,30 +11,6 @@ import string,random
 #print(sys.argv)
 #pip install urllib3==1.25.11
 
-checkDataUrl = sys.argv[1]
-proxies=[]
-jsondata={
-  "token":sys.argv[2]
-}
-
-def loadProxyList():
-  #print("--loadProxyList")
-  global checkDataUrl
-  global jsondata
-  url = "%s/getjob/%s/5" % (checkDataUrl,jsondata["token"])
-
-  resp = requests.get(url=url) #, params=params)
-
-  if(resp.status_code==200):
-    jsondata = resp.json()
-    jsondata["token"]= sys.argv[2]
-    jsondata["resp_url"] = "%s%s" % (sys.argv[1],jsondata["resp_url"])
-    #print("=== loaded %s proxies and %s ports " % (len(jsondata["ip"]),len(jsondata["ports"])))
-    
-    #for ip in data["ip"]:
-      #for port in data["ports"]:
-        #proxies.append({"ip":ip,"port":int(port)})
-
 def ip2int(addr):
     return struct.unpack("!I", socket.inet_aton(addr))[0]
 
@@ -77,7 +53,6 @@ def logToFile(data):
     f.write(str(data))
 
 def sendProxyStatus(proxy_ip,proxy_port,status,resp_url,token):
-
   url="%s/%s/%s/%s/%s" % (resp_url,token,proxy_ip,proxy_port,status)
   print("--sendProxyStatus\n%s"%url)
   logToFile("sendProxyStatus %s" %url)
@@ -92,28 +67,6 @@ def sendProxyStatus(proxy_ip,proxy_port,status,resp_url,token):
       time.sleep(0.2)
   #print("===========Send proxy status %s  responce code = %s" % (url,response.status_code))
   #exit()
-
-def store_proxy(ip,ports_data):
-  while True:
-    try:
-      with sqlite3.connect('db.db') as conn3:
-       if(len(ports_data)==0):
-         print("store die ip %s" %ip)
-         conn3.execute("INSERT INTO die_proxies (ip) VALUES (%s)" %ip)
-       else:
-         print("store works data")
-         conn3.executemany("INSERT INTO working_proxies (ip,port, proxie_type) VALUES (?,?,?)",[(ip,p[0],p[1]) for p in ports_data])
-       if conn3.in_transaction==False:
-         logToFile("Error conn3.in_transaction is false  %s"%str((ip,ports_data)))
-       while conn3.in_transaction:
-         print("try commit transaction ip=%s" %ip)
-         conn3.commit()
-       #conn3.close()
-      sys.exit()  
-    except Exception as ex2:
-      #logToFile("store_proxy exception \n %s \n%s"%(str((ip,ports_data)),str(ex2)))
-      time.sleep(0.1)
-    #sys.exit()
 
 def startCheckProxy(ip,ports,timeout,trysite,resp_url,token):
   _ip = int2ip(ip)
@@ -146,28 +99,25 @@ def startCheckProxy(ip,ports,timeout,trysite,resp_url,token):
       #ports_aviables.append((port,0))
     #continue
 
-  #print(ports_aviables)
-  #store_proxy(ip,[p for p in ports_aviables if p[1]>0])
   sys.exit()
 
-loadProxyList()
-#print(jsondata)
-threads = []
+def StartMe(ips,ports,timeout,trysite,resp_url,data_token):
+  threads = []
 
-for ip in jsondata["ip"]:
-  threads.append(threading.Thread(target=startCheckProxy, args=(ip,jsondata["ports"],jsondata["timeout"],jsondata["trysite"],jsondata["resp_url"],jsondata["token"])))#.start()
+  for ip in ips:
+    threads.append(threading.Thread(target=startCheckProxy, args=(ip,ports,timeout,trysite,resp_url,data_token)))#.start()
 
-for x in threads:
-  x.start()
+  for x in threads:
+    x.start()
 
-for x in threads:
-  try:
-    x.join()
-  except:
-    print("x.join() error")
-#print("!!!!!Closed process")
+  for x in threads:
+    try:
+      x.join()
+    except:
+      print("x.join() error")
+  #print("!!!!!Closed process")
 
-sys.exit()
+  sys.exit()
 #python CheckProxy.py "http://v562757.macloud.host" "ttt"
 
   
