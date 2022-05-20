@@ -1,15 +1,21 @@
-#import sqlite3
 import threading
 import requests
 import psutil
 import time
 import sys, os
 import CheckProxy
+import subprocess
+
+isMainProcess=False
+
+for i in sys.argv:
+  print(i)
+  if(i=="--main-process"):
+    isMainProcess = True
 
 load_data_url = "http://v562757.macloud.host"
 token = "ttt"
 run_work_thread_sleep=0.2
-count_ips_per_thread = 6
 
 system_loud_cpu_limit=80
 system_loud_mem_limit=95
@@ -17,15 +23,21 @@ system_loud_mem_limit=95
 def loadProxyList(data_url,data_token):
   jsondata = {}
   url = "%s/getjob/%s/200" % (data_url,data_token)
-  resp = requests.get(url=url) #, params=params)
+  try:
 
-  if(resp.status_code==200):
-    jsondata = resp.json()
-    jsondata["token"]= data_token
-    jsondata["resp_url"] = "%s%s" % (data_url,jsondata["resp_url"])
-    return jsondata
-  else:
-    return false
+    resp = requests.get(url=url) #, params=params)
+
+    if(resp.status_code==200):
+      jsondata = resp.json()
+      jsondata["token"]= data_token
+      jsondata["resp_url"] = "%s%s" % (data_url,jsondata["resp_url"])
+      return jsondata
+    else:
+      print("\n== loadProxyList request fail with status code = %s"%resp.status_code)
+      return False
+  except Exception as ex:
+    print("\n====loadProxyList FAIL \n%s"%ex)
+    return False
   
 def runSubprocess(_retunr_host,_token):
   subprocess.Popen(["python","CheckProxy.py",_retunr_host, _token]).communicate() #.poll()
@@ -51,37 +63,39 @@ def checkZombieProcesses():
 def checkZombieProcesses2():
   while True:
     print("total running threads %s" %len([t for t in threading.enumerate() if t.is_alive()]))
-    time.sleep(5)
+    time.sleep(30)
+    if(isMainProcess==False):
+      if(len([t for t in threading.enumerate() if t.is_alive()])<3):
+        exit()
+    else if(len([t for t in threading.enumerate() if t.is_alive()])>3 and psutil.cpu_percent()<system_loud_cpu_limit and psutil.virtual_memory().percent<system_loud_mem_limit):
+      print("==run another not main process")
+      subprocess.Popen(["python","main.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 threading.Thread(target=checkZombieProcesses2, args=()).start()
 #_args=["http://v562757.macloud.host","ttt"]
 
-
-#jsondata = loadProxyList(load_data_url,token)
-
 while (True):
-  #break
+  break
   loud_cpu, loud_mem = psutil.cpu_percent(), psutil.virtual_memory().percent
   if (loud_cpu <system_loud_cpu_limit and loud_mem<system_loud_mem_limit):
     
     jsondata = loadProxyList(load_data_url,token)
-    
+    if(jsondata==False):
+      if(isMainProcess==False):
+        break
+      else:
+        time.sleep(5)
+        continue
+
+    print("\n--Loaded IPs to check %s"%len(jsondata["ip"]))
     for ip in jsondata["ip"]:
       for port in jsondata["ports"]:
         t = threading.Thread(target=CheckProxy.startCheckProxy, args = (ip,port,jsondata["timeout"],jsondata["resp_url"],token))
         t.daemon = True
         t.start()
-        #t.join(0.005)
-        #t = threading.Thread(target=CheckProxy.startCheckProxy, args=(ip,jsondata["ports"],jsondata["timeout"],jsondata["trysite"],jsondata["resp_url"],token))
-        #t.daemon = True
-        #t.start()
-        #t.join()
       time.sleep(0.005)
-          #CheckProxy.startCheckProxy(ip,ports,timeout,trysite,resp_url,token)
       
   else:
     print("====System too low. Waiting... cpu = %s memory = %s" % (loud_cpu, loud_mem))
 
-  #print("total running threads %s" %len([t for t in threading.enumerate() if t.is_alive()]))
   time.sleep(run_work_thread_sleep)  
-

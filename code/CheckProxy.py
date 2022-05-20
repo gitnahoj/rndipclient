@@ -60,6 +60,3 @@ def startCheckProxy(ip,port,timeout,resp_url,token):
   elif (checkProxyByType("socks4",proxy,timeout,"%s/%s/%s/%s/%s" % (resp_url,token,ip,port,4))==True):
     exit()
   checkProxyByType("https",proxy,timeout,"%s/%s/%s/%s/%s" % (resp_url,token,ip,port,1))
-
-
-  
