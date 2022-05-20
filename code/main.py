@@ -67,7 +67,7 @@ def checkZombieProcesses2():
     if(isMainProcess==False):
       if(len([t for t in threading.enumerate() if t.is_alive()])<3):
         exit()
-    else if(len([t for t in threading.enumerate() if t.is_alive()])>3 and psutil.cpu_percent()<system_loud_cpu_limit and psutil.virtual_memory().percent<system_loud_mem_limit):
+    elif(len([t for t in threading.enumerate() if t.is_alive()])>3 and psutil.cpu_percent()<system_loud_cpu_limit and psutil.virtual_memory().percent<system_loud_mem_limit):
       print("==run another not main process")
       subprocess.Popen(["python","main.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
@@ -75,25 +75,26 @@ threading.Thread(target=checkZombieProcesses2, args=()).start()
 #_args=["http://v562757.macloud.host","ttt"]
 
 while (True):
-  break
   loud_cpu, loud_mem = psutil.cpu_percent(), psutil.virtual_memory().percent
   if (loud_cpu <system_loud_cpu_limit and loud_mem<system_loud_mem_limit):
-    
-    jsondata = loadProxyList(load_data_url,token)
-    if(jsondata==False):
-      if(isMainProcess==False):
-        break
-      else:
-        time.sleep(5)
-        continue
+    try:  
+      jsondata = loadProxyList(load_data_url,token)
+      if(jsondata==False):
+        if(isMainProcess==False):
+          break
+        else:
+          time.sleep(5)
+          continue
 
-    print("\n--Loaded IPs to check %s"%len(jsondata["ip"]))
-    for ip in jsondata["ip"]:
-      for port in jsondata["ports"]:
-        t = threading.Thread(target=CheckProxy.startCheckProxy, args = (ip,port,jsondata["timeout"],jsondata["resp_url"],token))
-        t.daemon = True
-        t.start()
-      time.sleep(0.005)
+      print("\n--Loaded IPs to check %s"%len(jsondata["ip"]))
+      for ip in jsondata["ip"]:
+        for port in jsondata["ports"]:
+          t = threading.Thread(target=CheckProxy.startCheckProxy, args = (ip,port,jsondata["timeout"],jsondata["resp_url"],token))
+          t.daemon = True
+          t.start()
+        time.sleep(0.005)
+    except Exception as e:
+      print("==While True ERROR \n%s" %str(e))
       
   else:
     print("====System too low. Waiting... cpu = %s memory = %s" % (loud_cpu, loud_mem))
